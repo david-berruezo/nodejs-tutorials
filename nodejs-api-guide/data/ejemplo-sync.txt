@@ -1,0 +1,4 @@
+Hola desde Node.js!
+Esta es la segunda línea.
+Y esta la tercera.
+Línea añadida con appendFileSync!

@@ -1,0 +1,25 @@
+{
+  "name": "task-manager-cli",
+  "version": "1.0.0",
+  "description": "> Gestión de tareas desde terminal con Node.js puro — sin frameworks, solo módulos nativos.",
+  "main": "index.js",
+  "bin": {
+    "tasks": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "tasks": "node src/index.js"
+  },
+  "keywords": [
+    "cli",
+    "task-manager",
+    "nodejs",
+    "tutorial"
+  ],
+  "author": "David Berruezo",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

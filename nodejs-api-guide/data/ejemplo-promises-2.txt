@@ -1,0 +1,3 @@
+Hola desde Promises!
+Mucho más limpio que callbacks.
+Tercera línea.

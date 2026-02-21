@@ -1,0 +1,15 @@
+{
+  "nombre": "David",
+  "lenguajes": [
+    "JavaScript",
+    "PHP",
+    "Node.js"
+  ],
+  "experiencia": {
+    "años": 10,
+    "empresas": [
+      "AUBAY",
+      "Avantio"
+    ]
+  }
+}

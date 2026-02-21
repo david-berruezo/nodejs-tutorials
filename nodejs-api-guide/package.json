@@ -1,0 +1,12 @@
+{
+  "name": "nodejs-api-guide",
+  "version": "1.0.0",
+  "description": "> Antes de escribir una sola línea de Node.js, necesitas entender ESTO.",
+  "main": "01-readwrite.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
