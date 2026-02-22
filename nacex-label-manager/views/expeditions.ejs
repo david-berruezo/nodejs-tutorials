@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="print-view">
+    <div class="logo">
+        <a target="_blank" href="https://www.nacex.es">
+            <span class="logo-text">NACEX<span class="logo-sub">LOGISTA</span></span>
+        </a>
+    </div>
+
+    <div class="manage-tabs">
+        <a class="manage-ord" href="/print">Pedidos</a>
+        <a class="manage-exp active" href="/expeditions">Expediciones</a>
+    </div>
+
+    <div class="order-list">
+        <table id="expeditionsTable" class="display" style="width:100%">
+            <thead>
+            <tr>
+                <th>Código Exp.</th>
+                <th>Pedido</th>
+                <th>Cliente</th>
+                <th>Servicio</th>
+                <th>Barcode</th>
+                <th>Ruta</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+            </tr>
+            </thead>
+            <tbody>
+            <% expeditions.forEach(exp => { %>
+                <tr>
+                    <td><%= exp.cod_exp %></td>
+                    <td>#<%= exp.order_id %></td>
+                    <td><%= exp.customer %></td>
+                    <td><%= exp.service_name %></td>
+                    <td><code><%= exp.barcode %></code></td>
+                    <td>
+                        <span style="display:inline-block;width:12px;height:12px;background:<%= exp.color %>;border-radius:2px;margin-right:4px;"></span>
+                        <%= exp.route %>
+                    </td>
+                    <td><%= exp.status_desc %></td>
+                    <td><%= exp.created_at ? new Date(exp.created_at).toLocaleDateString('es-ES') : '' %></td>
+                </tr>
+            <% }); %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#expeditionsTable').DataTable({
+        language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+        order: [[7, 'desc']],
+        pageLength: 25
+    });
+});
+</script>
+
+</body>
+</html>

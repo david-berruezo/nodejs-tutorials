@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/select/1.7.0/css/select.dataTables.min.css">
+    <!-- Material Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <!-- DatePicker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- Toastify -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <!-- App CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="print-view">
+
+    <!-- Logo -->
+    <div class="logo">
+        <a target="_blank" title="Ir a la web de Nacex" href="https://www.nacex.es">
+            <span class="logo-text">NACEX<span class="logo-sub">LOGISTA</span></span>
+        </a>
+    </div>
+
+    <!-- Tabs -->
+    <div class="manage-tabs">
+        <a class="manage-ord active" href="/print">Pedidos</a>
+        <a class="manage-exp" href="/expeditions">Expediciones</a>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- FILTROS (equivalente a manage-filters de print.php)           -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="manage-filters">
+        <p>Lista de pedidos</p>
+        
+        <!-- Filtros rápidos de fecha -->
+        <div>
+            <span class="today" data-filter="today">Hoy</span>
+            <span class="yesterday" data-filter="yesterday">Ayer</span>
+            <span class="week" data-filter="week">Semana</span>
+            <span class="month" data-filter="month">Mes</span>
+        </div>
+
+        <!-- Filtro por tipo de servicio -->
+        <div>
+            <select class="manage-services" id="filterService">
+                <option value="-"> - Tipo de servicio -</option>
+                <option value="nacex">Standard</option>
+                <option value="nacexshop">NacexShop</option>
+                <option value="nacexint">Internacional</option>
+                <option value="nonacex">Externo</option>
+            </select>
+        </div>
+
+        <!-- Filtro por transportista/servicio -->
+        <div>
+            <select class="manage-carriers" id="filterCarrier">
+                <option value="-"> - Servicio -</option>
+                <% Object.entries(vars.services).forEach(([cod, s]) => { %>
+                    <option value="<%= cod %>"><%= s.nombre %></option>
+                <% }); %>
+            </select>
+        </div>
+
+        <!-- Filtro por método de pago -->
+        <div>
+            <select class="manage-payments" id="filterPayment">
+                <option value="-"> - Tipo de pago -</option>
+                <% Object.entries(vars.paymentMethods).forEach(([key, value]) => { %>
+                    <option value="<%= key %>"><%= value %></option>
+                <% }); %>
+            </select>
+        </div>
+
+        <!-- Búsqueda por cliente -->
+        <div>
+            <input type="text" class="searchCustomer" id="searchCustomer" placeholder="Buscar por Cliente...">
+            <i class="material-icons">search</i>
+        </div>
+
+        <!-- Filtro por estado -->
+        <div>
+            <select class="searchStatus" id="filterStatus">
+                <option value="0">Buscar por estado...</option>
+                <% Object.entries(vars.statuses).forEach(([id, status]) => { %>
+                    <option value="<%= id %>"><%= status %></option>
+                <% }); %>
+            </select>
+        </div>
+
+        <!-- Búsqueda por ID -->
+        <div>
+            <input type="text" class="searchID" id="searchID" placeholder="Buscar por ID...">
+            <i class="material-icons">search</i>
+        </div>
+
+        <!-- Rango de fechas -->
+        <div class="date-range">
+            Periodo
+            <input type="text" id="rangeMin" name="rangeMin" placeholder="Desde">
+            <input type="text" id="rangeMax" name="rangeMax" placeholder="Hasta">
+            <i class="material-icons datepicker-icon-min">calendar_today</i>
+            <i class="material-icons datepicker-icon-max">calendar_today</i>
+        </div>
+
+        <!-- Imprimir tabla -->
+        <button class="btn-print-table" id="btnPrintTable" title="Imprimir tabla">
+            <i class="material-icons" style="font-size:18px;">print</i>
+        </button>
+
+        <!-- Limpiar filtros -->
+        <div class="contenedor-clear-filters-manage">
+            <span class="clear-filters-manage" id="clearFilters" title="Limpiar filtros">✕</span>
+        </div>
+
+        <!-- Filtros de expedición -->
+        <div class="filter-group" style="clear:both">
+            <label>
+                <span class="label-text">Expedición:</span>
+                <input type="checkbox" name="filter_expedicion" class="filter_expedicion" id="filterConExp">
+                <span>Con Exp</span>
+                <input type="checkbox" name="filter_no_expedicion" class="filter_no_expedicion" id="filterSinExp">
+                <span>Sin Exp</span>
+            </label>
+        </div>
+
+        <div class="filter-group">
+            <label>
+                <span class="label-text">Etiquetas</span>
+                <input type="checkbox" name="filter_etiqueta_840" class="filter_etiqueta_840" id="filter840">
+                <span>Etiq 840</span>
+                <input type="checkbox" name="filter_etiqueta_841" class="filter_etiqueta_841" id="filter841">
+                <span>Etiq 841</span>
+            </label>
+        </div>
+
+        <div class="filter-group">
+            <label>
+                <span class="label-text">Estados expediciones</span>
+                <select id="filterExpStatus" class="estadosExpediciones">
+                    <option value="-"> - Estados expediciones -</option>
+                    <% vars.estadosExpediciones.forEach(estado => { %>
+                        <option value="<%= estado.codigo %>"><%= estado.descripcion %></option>
+                    <% }); %>
+                </select>
+            </label>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- TABLA DE PEDIDOS                                               -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="order-list">
+        <div class="loading" id="tableLoading"></div>
+        <table id="ordersTable" class="display" style="width:100%">
+            <thead>
+            <tr>
+                <th><input type="checkbox" id="checkAll"></th>
+                <th class="tableRowId">ID</th>
+                <th>Estado</th>
+                <th>Servicio</th>
+                <th>Tipo</th>
+                <th>País</th>
+                <th>Total</th>
+                <th>Pago</th>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Email</th>
+                <th>Estado Exp.</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- FORMULARIO DE EXPEDICIÓN (equivalente a service-form)          -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <form class="service-form" id="serviceForm" action="#" method="post">
+
+        <!-- Overlay cargando -->
+        <div class="contenedor-cargando-overlay" id="loadingOverlay"></div>
+        <div class="contenedor-cargando" id="loadingModal">
+            <div class="loading-header">Generando etiquetas</div>
+            <div class="loading-body">
+                <div class="loading-spinner"></div>
+                <div class="loading-step-text" id="loadingStep">Paso 1 de 3</div>
+                <div class="loading-description" id="loadingDesc">Iniciando proceso...</div>
+            </div>
+            <div class="loading-footer">
+                <div class="loading-progress">
+                    <div class="loading-progress-bar" id="loadingBar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Limpiar formulario -->
+        <div class="contenedor-clear-filters-manage-form">
+            <span class="clear-filters-manage-form" id="clearForm" title="Limpiar formulario">✕</span>
+        </div>
+
+        <!-- Ocultos -->
+        <input type="hidden" name="servicios_originales_vector" id="servicios_originales_vector" value="">
+        <input type="hidden" name="existe_reembolso" id="existe_reembolso" value="">
+
+        <legend>Rellenar los siguientes parámetros para Nacex</legend>
+
+        <div class="config col-md-12 columna-formulario" style="height:auto; overflow:visible;">
+
+            <!-- Abonado -->
+            <div class="field input-shorter">
+                <label for="agencia">Abonado:</label>
+                <select id="agencia" name="agencia">
+                    <% vars.agency.forEach(a => { %>
+                        <option value="<%= a %>"><%= a %></option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <!-- Departamento -->
+            <div class="field input-shorter">
+                <label for="departamento">Departamento:</label>
+                <select id="departamento" name="departamento">
+                    <option value="0">-</option>
+                    <% vars.department.forEach(d => { %>
+                        <option value="<%= d %>"><%= d %></option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <!-- Servicio -->
+            <div class="field input-short servicio">
+                <label for="servicio">Seleccionar servicio Nacex:</label>
+                <select id="servicio" name="servicio">
+                    <option>-</option>
+                    <% Object.entries(vars.services).forEach(([cod, s]) => { %>
+                        <option data-type="<%= s.tipo %>" value="<%= cod %>"><%= s.nombre %></option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <!-- Fecha expedición -->
+            <div class="field input-shorter">
+                <label for="nacex_fec">Fecha expedición:</label>
+                <input type="text" id="nacex_fec" name="nacex_fec" value="<%= now.toLocaleDateString('es-ES') %>">
+            </div>
+
+            <!-- Bultos -->
+            <div class="field input-shorter field-bultos">
+                <label for="nacex_bultos">Bultos:</label>
+                <input type="text" id="nacex_bultos" name="nacex_bultos" value="<%= vars.bultos_defecto %>">
+            </div>
+
+            <!-- Tipo de servicio (radio) -->
+            <div class="field input-medium field-servicios_originales radios" style="clear:both">
+                <label>Tipo de servicio:</label>
+                <input type="radio" name="servicios_originales" id="servicios_originales_radio_1" value="0">
+                <label for="servicios_originales_radio_1">Personalizar servicio</label>
+                <input type="radio" name="servicios_originales" id="servicios_originales_radio_2" value="1" checked>
+                <label for="servicios_originales_radio_2">Selección de servicios</label>
+            </div>
+
+            <div class="contenedor-servicios-originales"></div>
+
+            <!-- Portes -->
+            <div class="field input-medium field-portes radios">
+                <label>Portes:</label>
+                <% Object.entries(vars.portes).forEach(([cod, p]) => { %>
+                    <input type="radio" name="portes" id="portes<%= cod %>" value="<%= cod %>" <%= cod === vars.portes_defecto ? 'checked' : '' %>>
+                    <label for="portes<%= cod %>"><%= p %></label>
+                <% }); %>
+            </div>
+
+            <!-- Envase -->
+            <div class="field input-medium radios">
+                <label>Tipo de envase:</label>
+                <% Object.entries(vars.envases).forEach(([cod, e]) => { %>
+                    <input type="radio" name="envase" id="envase<%= cod %>" value="<%= cod %>" <%= cod === vars.envase_defecto ? 'checked' : '' %>>
+                    <label class="envase" for="envase<%= cod %>"><%= e %></label>
+                <% }); %>
+                <% Object.entries(vars.envasesInt).forEach(([cod, e]) => { %>
+                    <input type="radio" name="envase" id="envase<%= cod %>" value="<%= cod %>">
+                    <label class="envaseInt" for="envase<%= cod %>"><%= e %></label>
+                <% }); %>
+            </div>
+
+            <!-- Retorno -->
+            <div class="field input-medium retorno field-retorno radios">
+                <label>Retorno:</label>
+                <input type="radio" name="retorno" id="retornoN" value="NO" checked>
+                <label for="retornoN">No</label>
+                <input type="radio" name="retorno" id="retornoS" value="SI">
+                <label for="retornoS">Sí</label>
+            </div>
+
+            <!-- Seguro -->
+            <div class="field input-small seguro inline field-seguro">
+                <label for="seguro">Seguro:</label>
+                <select id="seguro" name="seguro">
+                    <% Object.entries(vars.seguros).forEach(([cod, s]) => { %>
+                        <option value="<%= cod %>"><%= s.nombre %></option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <!-- Importe seguro -->
+            <div class="field input-small segImp field-segImp inline">
+                <label for="nacex_imp_seg">Importe asegurado:</label>
+                <input type="number" min="0" id="nacex_imp_seg" name="nacex_imp_seg" value="" maxlength="35" placeholder="€">
+                <p>* El importe del seguro será el <strong>total</strong> de cada pedido seleccionado</p>
+            </div>
+
+            <!-- Prealerta tipo -->
+            <div class="field input radios field-tip_pre">
+                <label>Tipo prealerta por defecto:</label>
+                <input type="radio" name="tip_pre" id="tip_preN" value="NO" checked>
+                <label for="tip_preN">No</label>
+                <input type="radio" name="tip_pre" id="tip_preS" value="SI">
+                <label for="tip_preS">Sí</label>
+            </div>
+
+            <!-- Prealerta -->
+            <div class="field input-medium field-prealerta radios">
+                <label>Prealerta:</label>
+                <% Object.entries(vars.prealerta).forEach(([cod, p]) => { %>
+                    <input type="radio" name="preal" id="preal<%= cod %>" value="<%= cod %>" <%= cod === vars.prealerta_defecto ? 'checked' : '' %>>
+                    <label for="preal<%= cod %>"><%= p %></label>
+                <% }); %>
+            </div>
+
+            <!-- Destino prealerta -->
+            <div class="field input-medium-s modPreDest">
+                <label for="mod_preal_dest"></label>
+                <input type="text" id="mod_preal_dest" name="mod_preal_dest" value="" placeholder="Destino prealerta">
+            </div>
+
+            <!-- Modo prealerta -->
+            <div class="field input-medium-l radios newLine modPre">
+                <label>Modo prealerta:</label>
+                <% Object.entries(vars.prealertaMod).forEach(([cod, p]) => { %>
+                    <input type="radio" name="mod_preal" id="mod_preal<%= cod %>" value="<%= cod %>" <%= cod === 'S' ? 'checked' : '' %>>
+                    <label for="mod_preal<%= cod %>"><%= p %></label>
+                <% }); %>
+            </div>
+
+            <!-- Mensaje prealerta -->
+            <div class="field input-medium-s modPreMes">
+                <label for="mod_preal_mess"></label>
+                <input type="text" id="mod_preal_mess" name="mod_preal_mess" value="" placeholder="Mensaje prealerta">
+            </div>
+
+            <!-- Reembolso -->
+            <div class="field input-medium radios newLine reem">
+                <label class="reem">Reembolso:</label>
+                <input type="radio" name="reem" id="reemN" value="0" checked>
+                <label class="reem" for="reemN">No</label>
+                <input type="radio" name="reem" id="reemS" value="1">
+                <label class="reem" for="reemS">Sí</label>
+            </div>
+
+            <!-- Tipo reembolso -->
+            <div class="field input-medium radios newLine tipoRee">
+                <label class="tipoRee">Tipo reembolso:</label>
+                <% Object.entries(vars.reembolso).forEach(([cod, p]) => { %>
+                    <input class="tipoRee" type="radio" name="reembolso" id="reembolso<%= cod %>" value="<%= cod %>" <%= cod === vars.reembolso_defecto ? 'checked' : '' %>>
+                    <label class="tipoRee" for="reembolso<%= cod %>"><%= p %></label>
+                <% }); %>
+            </div>
+
+            <!-- Importe reembolso -->
+            <div class="field input-small impRee inline">
+                <label class="imp_ree">Importe reembolso:</label>
+                <input type="number" min="0" id="imp_ree" name="imp_ree" value="" maxlength="35" placeholder="€">
+                <p class="imp_ree">* El importe del reembolso será el <strong>total</strong> de cada pedido seleccionado</p>
+            </div>
+
+            <!-- Observaciones -->
+            <div class="field input-medium newLine field-observations">
+                <label for="obs1">Observaciones de entrega (1):</label>
+                <input type="text" id="obs1" name="obs1" value="" maxlength="38">
+            </div>
+
+            <div class="field input-medium field-observations-two">
+                <label for="obs2">Observaciones de entrega (2):</label>
+                <input type="text" id="obs2" name="obs2" value="" maxlength="38">
+            </div>
+
+            <!-- Campos internacionales -->
+            <div class="field input-medium campo-internacional field-contenido">
+                <label for="con">Contenido:</label>
+                <input type="text" id="con" name="con" value="" maxlength="38" class="campo-internacional">
+            </div>
+
+            <div class="field input-medium campo-internacional field-valor-declarado">
+                <label for="val_dec">Valor declarado:</label>
+                <input type="text" id="val_dec" name="val_dec" value="" maxlength="8" class="campo-internacional">
+            </div>
+
+            <!-- Instrucciones adicionales -->
+            <div class="field input-medium radios newLine">
+                <label>¿Añadir instrucciones adicionales?:</label>
+                <input type="radio" name="ins_adi_quest" id="ins_adi_questN" value="0" checked>
+                <label for="ins_adi_questN">No</label>
+                <input type="radio" name="ins_adi_quest" id="ins_adi_questS" value="1">
+                <label for="ins_adi_questS">Sí</label>
+            </div>
+
+            <div class="field newLine insAdi" style="display:none;">
+                <label for="ins_adi1">Instrucciones adicionales:</label>
+                <textarea id="ins_adi1" name="ins_adi1"></textarea>
+            </div>
+
+            <div class="field newLine insAdi" style="display:none;">
+                <label for="ins_adi2">Instrucciones adicionales:</label>
+                <textarea id="ins_adi2" name="ins_adi2"></textarea>
+            </div>
+
+            <!-- Errores -->
+            <div class="ncx-error-msg" id="errorMsg" style="clear:both;"></div>
+
+        </div>
+    </form>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- RESUMEN EXPEDICIONES                                           -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="ncx-error-msg-repetir-etiqueta" id="errorRepeat" style="clear:both;"></div>
+
+    <div class="label_info">
+        <strong>Nota</strong>: Para generar etiquetas, debes seleccionar al menos un pedido
+    </div>
+
+    <div class="label_info resumen-expediciones" id="resumenExpediciones" style="display:none;">
+        <strong>Expediciones generadas:</strong>
+        <div class="resumen-expediciones-generadas-resumen" id="resumenGeneradas"></div>
+    </div>
+
+    <div class="label_info resumen-errores" id="resumenErrores" style="display:none;">
+        <strong>Expediciones erróneas:</strong>
+        <div class="resumen-expediciones-erroneas-resumen" id="resumenErroneas"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- BOTONES DE ACCIÓN                                              -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="label_container">
+        <button type="button" data-metodo="1" class="genButton creacion-etiqueta-1" id="btnGenLabel">
+            Generar etiquetas
+        </button>
+        
+        <button type="button" data-metodo="2" class="genButton creacion-etiqueta-2" id="btnRepeatLabel" style="display:none;">
+            Repetir etiqueta
+        </button>
+        
+        <button type="button" data-metodo="3" class="genButton creacion-etiqueta-3" id="btnExtraLabel" style="display:none;">
+            Etiqueta expedición extra
+        </button>
+
+        <div class="labelLoad loading" id="labelLoading" style="display:none;"></div>
+        
+        <div id="label">
+            <div id="labelContent"></div>
+        </div>
+
+        <!-- Diálogo de confirmación -->
+        <div class="genDialog" id="genDialog" style="display:none;">
+            <p>¿Generar e imprimir estas etiquetas?</p>
+            <button class="cancel" id="dialogCancel">Cancelar</button>
+            <button class="confirm" id="dialogConfirm">Confirmar</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL DE IMPRESIÓN (equivalente a print-modal)                 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="print-modal-overlay" id="printModalOverlay">
+    <div class="print-modal">
+        <!-- Vista previa -->
+        <div class="print-preview" id="printPreview">
+            <div class="preview-page">
+                <div id="previewContent"></div>
+            </div>
+            <div class="zoom-controls">
+                <button id="zoomOut">-</button>
+                <span id="zoomLevel">100%</span>
+                <button id="zoomIn">+</button>
+            </div>
+        </div>
+
+        <!-- Panel de control -->
+        <div class="print-controls">
+            <div class="print-modal-header">
+                <h3>Imprimir</h3>
+            </div>
+            <div class="print-options">
+                <div class="print-option">
+                    <label>Destino</label>
+                    <select id="printerSelect">
+                        <option value="pdf">Guardar como PDF</option>
+                        <option value="thermal">Impresora térmica</option>
+                    </select>
+                </div>
+                <div class="print-option">
+                    <label>Tipo de impresora</label>
+                    <select id="printerType">
+                        <option value="LASER">Laser (HTML)</option>
+                        <option value="ZPL">ZPL (Zebra)</option>
+                        <option value="TPCL">TPCL (TSC)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="print-modal-footer">
+                <button id="closePrintDialog" class="btn btn-secondary">Cancelar</button>
+                <button id="handlePrint" class="btn btn-primary">Imprimir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL PREVIEW PEDIDO                                           -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="order-preview-overlay" id="orderPreviewOverlay" style="display:none;">
+    <div class="order-preview-modal">
+        <div class="order-preview-header">
+            <h3>Detalle del pedido <span id="previewOrderId"></span></h3>
+            <button class="close-preview" id="closePreview">✕</button>
+        </div>
+        <div class="order-preview-body" id="previewBody">
+            <!-- Se llena dinámicamente -->
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/select/1.7.0/js/dataTables.select.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+<!-- Variables del servidor (equivalente a objeto_print en PHP) -->
+<script>
+    var objeto_print = <%- JSON.stringify(vars) %>;
+    var nacex_config = <%- JSON.stringify(config) %>;
+</script>
+
+<script src="/js/print.js"></script>
+
+</body>
+</html>
