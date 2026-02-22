@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/foldgutter.min.css">
+    <!-- Material Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <!-- Toastify -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <!-- App CSS -->
+    <link rel="stylesheet" href="/css/editor.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TOOLBAR                                                 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<header class="toolbar">
+    <div class="toolbar-left">
+        <span class="brand">ZPL<span class="brand-accent">Editor</span></span>
+        <div class="toolbar-divider"></div>
+        
+        <!-- Templates -->
+        <div class="dropdown">
+            <button class="tb-btn" id="btnTemplates">
+                <i class="material-icons">description</i>
+                <span>Plantillas</span>
+                <i class="material-icons arrow">expand_more</i>
+            </button>
+            <div class="dropdown-menu" id="templateMenu">
+                <div class="dropdown-header">Nacex</div>
+                <% templates.filter(t => t.category === 'nacex').forEach(t => { %>
+                    <a class="dropdown-item" data-template="<%= t.id %>"><%= t.name %></a>
+                <% }); %>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-header">Genérico</div>
+                <% templates.filter(t => t.category === 'generic').forEach(t => { %>
+                    <a class="dropdown-item" data-template="<%= t.id %>"><%= t.name %></a>
+                <% }); %>
+            </div>
+        </div>
+
+        <button class="tb-btn" id="btnRedraw" title="Redibujar (Ctrl+Enter)">
+            <i class="material-icons">refresh</i>
+            <span>Redibujar</span>
+        </button>
+        <button class="tb-btn" id="btnRotate" title="Rotar etiqueta">
+            <i class="material-icons">rotate_right</i>
+            <span>Rotar</span>
+        </button>
+        <button class="tb-btn" id="btnOpenFile" title="Abrir archivo ZPL">
+            <i class="material-icons">folder_open</i>
+            <span>Abrir</span>
+        </button>
+        <input type="file" id="fileInput" accept=".zpl,.txt,.prn" style="display:none;">
+    </div>
+    
+    <div class="toolbar-right">
+        <button class="tb-btn" id="btnUndo" title="Deshacer (Ctrl+Z)">
+            <i class="material-icons">undo</i>
+        </button>
+        <button class="tb-btn" id="btnRedo" title="Rehacer (Ctrl+Y)">
+            <i class="material-icons">redo</i>
+        </button>
+        <div class="toolbar-divider"></div>
+        <button class="tb-btn" id="btnPermalink" title="Permalink">
+            <i class="material-icons">link</i>
+        </button>
+        <button class="tb-btn accent" id="btnDlZpl" title="Descargar ZPL">
+            ZPL
+        </button>
+        <button class="tb-btn" id="btnDlPng" title="Descargar PNG">
+            PNG
+        </button>
+        <button class="tb-btn" id="btnDlPdf" title="Descargar PDF">
+            PDF
+        </button>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- MAIN LAYOUT                                             -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="main-layout">
+
+    <!-- LEFT PANEL: Editor -->
+    <div class="panel-editor" id="panelEditor">
+        <div class="panel-header">
+            <span>Editor ZPL</span>
+            <div class="editor-info">
+                <span id="cursorPos">Ln 1, Col 1</span>
+                <span id="charCount">0 chars</span>
+            </div>
+        </div>
+        <textarea id="zplEditor"></textarea>
+    </div>
+
+    <!-- RESIZER -->
+    <div class="resizer" id="resizer"></div>
+
+    <!-- RIGHT PANEL: Preview + Settings -->
+    <div class="panel-preview" id="panelPreview">
+        
+        <!-- Preview image -->
+        <div class="preview-container" id="previewContainer">
+            <div class="preview-loading" id="previewLoading" style="display:none;">
+                <div class="spinner"></div>
+                <span>Renderizando...</span>
+            </div>
+            <div class="preview-error" id="previewError" style="display:none;"></div>
+            <img id="previewImage" alt="ZPL Preview" style="display:none;">
+            <div class="preview-placeholder" id="previewPlaceholder">
+                <i class="material-icons" style="font-size:48px;color:#666;">label</i>
+                <p>Haz clic en <strong>Redibujar</strong> o pulsa <strong>Ctrl+Enter</strong></p>
+            </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div class="settings-panel" id="settingsPanel">
+            
+            <div class="settings-section">
+                <h4>Densidad de impresión</h4>
+                <select id="settingDpmm">
+                    <option value="6">6 dpmm (152 dpi)</option>
+                    <option value="8" selected>8 dpmm (203 dpi)</option>
+                    <option value="12">12 dpmm (300 dpi)</option>
+                    <option value="24">24 dpmm (600 dpi)</option>
+                </select>
+            </div>
+
+            <div class="settings-section">
+                <h4>Calidad</h4>
+                <select id="settingQuality">
+                    <option value="Grayscale" selected>Escala de grises</option>
+                    <option value="Bitonal">Bitonal</option>
+                </select>
+            </div>
+
+            <div class="settings-section">
+                <h4>Tamaño de etiqueta</h4>
+                <div class="size-inputs">
+                    <input type="number" id="settingWidth" value="4" min="0.5" max="12" step="0.1">
+                    <span>×</span>
+                    <input type="number" id="settingHeight" value="6" min="0.5" max="24" step="0.1">
+                </div>
+                <select id="settingUnits">
+                    <option value="inches" selected>pulgadas</option>
+                    <option value="cm">cm</option>
+                    <option value="mm">mm</option>
+                </select>
+            </div>
+
+            <div class="settings-section">
+                <h4>Etiqueta</h4>
+                <div class="label-nav">
+                    <button id="btnPrevLabel" class="nav-btn" disabled>◀</button>
+                    <span><span id="currentLabel">1</span> de <span id="totalLabels">1</span></span>
+                    <button id="btnNextLabel" class="nav-btn" disabled>▶</button>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="settingAutoRedraw" checked>
+                    <span>Auto-redibujar al escribir</span>
+                </label>
+            </div>
+
+            <div class="settings-section">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="settingRemember" checked>
+                    <span>Recordar mi última etiqueta</span>
+                </label>
+            </div>
+
+        </div>
+
+        <!-- ZPL Help Panel -->
+        <div class="help-panel" id="helpPanel">
+            <div class="help-header">
+                <h4>Referencia ZPL</h4>
+                <input type="text" id="helpSearch" placeholder="Buscar comando...">
+            </div>
+            <div class="help-content" id="helpContent">
+                <p class="help-hint">Edita un comando ZPL para ver su ayuda aquí.</p>
+                <% zplCommands.forEach(c => { %>
+                    <div class="help-cmd" data-cmd="<%= c.cmd %>">
+                        <code><%= c.cmd %></code>
+                        <span class="help-desc"><%= c.desc %></span>
+                        <div class="help-syntax"><%= c.syntax %></div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+
+        <!-- Bottom tabs to switch between settings/help -->
+        <div class="panel-tabs">
+            <button class="tab-btn active" data-panel="settingsPanel">
+                <i class="material-icons">settings</i> Config
+            </button>
+            <button class="tab-btn" data-panel="helpPanel">
+                <i class="material-icons">help_outline</i> Referencia ZPL
+            </button>
+            <button class="tab-btn" id="tabLinter" data-panel="linterPanel">
+                <i class="material-icons">bug_report</i> Linter <span id="linterCount" class="badge">0</span>
+            </button>
+        </div>
+
+        <!-- Linter Panel -->
+        <div class="linter-panel" id="linterPanel" style="display:none;">
+            <div id="linterContent">
+                <p class="linter-ok">✅ Sin advertencias</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/search/search.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/search/searchcursor.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/dialog/dialog.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/selection/active-line.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/foldcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/foldgutter.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+<!-- Templates data -->
+<script>
+    var TEMPLATES = <%- JSON.stringify(templates) %>;
+    var ZPL_COMMANDS = <%- JSON.stringify(zplCommands) %>;
+</script>
+<script src="/js/zpl-mode.js"></script>
+<script src="/js/editor.js"></script>
+
+</body>
+</html>

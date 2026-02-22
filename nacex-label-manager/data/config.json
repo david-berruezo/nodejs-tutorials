@@ -1,0 +1,16 @@
+{
+  "nacex_agcli": "0001/001",
+  "nacex_departamentos": "0",
+  "nacex_tip_ser": "08",
+  "nacex_tip_env": "2",
+  "nacex_tip_cob": "O",
+  "nacex_tip_preal": "E",
+  "nacex_mod_preal": "S",
+  "nacex_ret": "NO",
+  "nacex_bultos": "1",
+  "nacex_auto_communication": "1",
+  "nacex_stdser_carriers": "{\"01\":\"01\",\"02\":\"02\",\"04\":\"04\",\"08\":\"08\",\"09\":\"09\"}",
+  "nacex_nxsser_carriers": "{\"31\":\"31\",\"37\":\"37\"}",
+  "nacex_intser_carriers": "{\"A\":\"A\",\"B\":\"B\"}",
+  "fecha_cron_expediciones": "2026-02-22T16:18:13.651Z"
+}

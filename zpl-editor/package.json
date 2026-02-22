@@ -1,0 +1,16 @@
+{
+  "name": "zpl-editor",
+  "version": "1.0.0",
+  "description": "ZPL Label Editor with live preview via Labelary API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": ["zpl", "zebra", "label", "editor", "labelary", "nacex"],
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^4.0.1",
+    "express": "^5.2.1"
+  }
+}
